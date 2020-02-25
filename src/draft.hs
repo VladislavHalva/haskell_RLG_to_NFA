@@ -1,4 +1,6 @@
 import System.Environment
+import Prelude
+
 
 main :: IO()
 main = do
@@ -81,4 +83,46 @@ data Tree = Leaf Int | Node Tree Int Tree
 
 tree :: Tree
 tree = Node (Leaf 2) 1 (Node (Leaf 3) 4 (Leaf 5))
+
+absAll :: (Num a) => [a] -> [a]
+absAll [] = []
+absAll (x:xs) = abs(x) : absAll(xs)
+
+len :: [a] -> Integer
+len [] = 0
+len (_:xs) = 1 + len xs
+
+mergeOrd :: (Ord a ) => [a] -> [a] -> [a]
+mergeOrd [] x = x
+mergeOrd x [] = x
+mergeOrd l1@(x:xs) l2@(y:ys) = if x < y 
+                                then x : mergeOrd xs l2
+                                else y : mergeOrd l1 ys
+
+fac :: (Num a, Ord a) => a -> a
+fac n   | n < 2 = 1
+        | otherwise = n * fac (n-1)
+
+revQuad :: [a] -> [a]
+revQuad [] = []
+revQuad (x:xs) = revQuad xs ++ [x]
+
+revLin :: [a] -> [a]
+revLin [] = []
+revLin xs = rev xs []
+    where   rev [] ys = ys
+            rev (x:xs) ys = (rev xs ys) ++ [x]
+
+sumList :: (Num a) => [a] -> a
+sumList = foldl (+) 0 
+
+map' :: (a -> b) -> [a] -> [b]
+map' f [] = []
+map' f (x:xs) = f x : map' f xs
+
+
+swapPairs :: [a] -> [a]
+swapPairs [] = []
+swapPairs [x] = [x]
+swapPairs (x:y:xs) = y:x:swapPairs xs
 
