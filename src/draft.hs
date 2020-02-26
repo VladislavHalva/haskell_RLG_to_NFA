@@ -4,9 +4,24 @@ import Prelude
 
 main :: IO()
 main = do
-    putStrLn "What";
-    a <- getArgs;
-    print a;
+    line <- getLine
+    if null line
+        then return ()
+        else do
+                putStrLn $ reversal line
+                main 
+
+
+
+
+reversal :: String -> String 
+reversal [] = []
+reversal (x:xs) = reversal xs ++ [x]
+
+
+-- fib = 0 : 1 : zipWith (+) fib (tail)
+-- fib :: [Integer]
+-- fib = 0 : 1 : [(+) (last $ init fib) (last fib)]
 
 
 factorial :: Integer -> Integer
@@ -70,20 +85,6 @@ pepa = Person "Pepa" 20
 getPersonAge :: Person -> Int
 getPersonAge (Person _ age) = age
 
-
-
-data Vector a = Vec Int [a]
-    deriving Show
-
-initVector :: [a] -> Vector a
-initVector a = Vec (length a) a 
-
-data Tree = Leaf Int | Node Tree Int Tree
-    deriving Show
-
-tree :: Tree
-tree = Node (Leaf 2) 1 (Node (Leaf 3) 4 (Leaf 5))
-
 absAll :: (Num a) => [a] -> [a]
 absAll [] = []
 absAll (x:xs) = abs(x) : absAll(xs)
@@ -125,4 +126,41 @@ swapPairs :: [a] -> [a]
 swapPairs [] = []
 swapPairs [x] = [x]
 swapPairs (x:y:xs) = y:x:swapPairs xs
+
+{- fib :: Num a => [a]
+fib = 0 : 1 : zipWith (+) fib (tail fib) -}
+
+cLists :: [a] -> [a] -> [a]
+cLists [] ys = ys
+--cLists xs (y:ys) = cLists (xs ++ [y]) ys
+cLists (x:xs) ys =  x : cLists xs ys
+
+mEvenList ::  Integral a => [a] -> [a]
+mEvenList xs = filter (even) xs
+
+data Vector a = Vec Int [a]
+    deriving Show
+
+initVector :: [a] -> Vector a
+initVector xs = Vec (length xs) xs
+
+-- dotProd :: Num a => Vector a -> Vector a -> Maybe a
+-- dotProd (Vec l1 xs) (Vec l2 ys) = if l1 == l2 
+--                                     then Just (sum (length zipWith (*) xs ys))
+--                                     else Nothing
+
+
+data Tree a = List | Tree a (Tree a) (Tree a)
+    deriving (Show, Read, Eq)
+
+singleton :: a -> Tree a 
+singleton a = Tree a List List
+
+treeInsert :: (Ord a) => a -> Tree a -> Tree a
+treeInsert x List = singleton x
+treeInsert x (Tree a left right) 
+    | x == a = Tree a left right 
+    | x < a  = Tree a (treeInsert x left) right
+    | x > a  = Tree a left (treeInsert x right) 
+
 
