@@ -12,20 +12,25 @@ import Data.Maybe (isNothing, isJust, fromJust, fromMaybe)
 import Data.List.Split (splitOn)
 import Data.List (intercalate, nub)
 import Data.Char (isUpper, isLower, isAlpha)
-import Data.Unique
+
+{-Structures ####################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
 
 data Grammar = Grammar  { nonTerminals :: String
                         , terminals :: String
-                        , startNonTerminal :: Char
-                        , rules :: [(Char, String)]
+                        , startNonTerminal :: String
+                        , rules :: [(String, String)]
                         }
 
 instance Show Grammar where
-    show (Grammar nt t snt r) = " G = ({" ++ nt ++ "}, {" ++ t ++ "}, " ++ [snt] ++ ", {" ++ printRules r ++ "})"  
+    show (Grammar nt t snt r) = " G = ({" ++ nt ++ "}, {" ++ t ++ "}, " ++ snt ++ ", {" ++ printRules r ++ "})"  
         where
             printRules x = init $ init $ parseRules x -- this line removes the comma and space at the end of rules
             parseRules [] = [] 
-            parseRules ((ruleLeft, ruleRight):restRules) = [ruleLeft] ++ "->" ++ ruleRight ++ ", " ++ parseRules restRules
+            parseRules ((ruleLeft, ruleRight):restRules) = ruleLeft ++ "->" ++ ruleRight ++ ", " ++ parseRules restRules
 
 
 data FiniteAutomaton = FA   { states :: [Integer]
@@ -36,38 +41,68 @@ data FiniteAutomaton = FA   { states :: [Integer]
     deriving Show
 
 
+{-Converting part################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
+
 convertToRegularGrammar :: Grammar -> Grammar
 convertToRegularGrammar (Grammar nt t snt r) =  Grammar (nt ++ newNt) t snt newRules
     where (newNt, newRules) = convertToRegularRules r
 
-convertToRegularRules :: [(Char, String)] -> (String, [(Char, String)])
+convertToRegularRules :: [(String, String)] -> (String, [(String, String)])
 convertToRegularRules r = (getNonTerminalsFromRules newRules, newRules)
-    where newRules = getNewRules r
+    where newRules = getNewRules r 0
 
-getNewRules :: [(Char, String)] -> [(Char, String)]
-getNewRules [] = []
-getNewRules ((left, right):rs)   | isLowerList right = breakRuleWithTermsOnly left right ++ getNewRules rs --just terms
-                                    | length right == 1 && head right == '#' = [] ++ getNewRules rs --epsilon
-                                    | otherwise = [] ++ getNewRules rs -- terms and nonterm
+getNewRules :: [(String, String)] -> Integer -> [(String, String)]
+getNewRules [] _ = []
+getNewRules ((left, right):rs) idx = brokenRules ++ getNewRules rs newIdx
+    where (brokenRules, newIdx) = breakRule left right idx
 
-breakRuleWithTermsOnly :: Char -> String -> [(Char, String)]
-breakRuleWithTermsOnly left right = (left, [head right]) : [('a', "")]
+breakRule :: String -> String -> Integer -> ([(String, String)], Integer)
+breakRule left right idx    | isLowerList right = breakRuleWithTermsOnly left right idx
+                            | length right == 1 && head right == '#' = ([(left, right)], idx)
+                            | otherwise = breakRuleWithNonTerm left right idx
 
+breakRuleWithTermsOnly :: String -> String -> Integer -> ([(String, String)], Integer)
+breakRuleWithTermsOnly left right idx = ((left, [head right, 'A'] ++ show idx) : brokenRules ++ [("A" ++ show (maxIdx+1), "#")], maxIdx+1)
+        where (brokenRules, maxIdx)  = getRulesAndMaxIndex $ breakChainOfTerms (tail right, idx+1)
 
-getNonTerminalsFromRules :: [(Char, String)] -> String
+breakRuleWithNonTerm :: String -> String -> Integer -> ([(String, String)], Integer)
+breakRuleWithNonTerm left right idx = if isLower $ head $ tail right
+        then ((left, [head right, 'A'] ++ show idx) : brokenRules, maxIdx+1)   
+        else ([addLastRuleOfNonTermEndedChain right], maxIdx)
+    where (brokenRules, maxIdx) = getRulesAndMaxIndex $ breakChainOfTermsWithNonTerm (tail right, idx+1) 
+
+addLastRuleOfNonTermEndedChain :: String -> (String, String)
+addLastRuleOfNonTermEndedChain x = ([head x], [last x])
+
+getRulesAndMaxIndex :: [(String, String)] -> ([(String, String)], Integer)
+getRulesAndMaxIndex rs = (rs, maxIndex $ last rs)
+
+maxIndex :: (String, String) -> Integer
+maxIndex (_, right) = read $ dropWhile isAlpha right :: Integer
+
+breakChainOfTerms :: (String, Integer) -> [(String, String)]
+breakChainOfTerms ([], idx) = []
+breakChainOfTerms ((t:ts), idx) = ("A" ++ (show $ idx-1), [t] ++ show idx) : breakChainOfTerms (ts, idx+1)
+
+breakChainOfTermsWithNonTerm :: (String, Integer) -> [(String, String)]
+breakChainOfTermsWithNonTerm ((t:ts), idx) = if length ts > 1
+    then ([t], "A" ++ show idx) : breakChainOfTermsWithNonTerm (ts, idx+1) 
+    else [addLastRuleOfNonTermEndedChain (t:ts)]
+
+getNonTerminalsFromRules :: [(String, String)] -> String
 getNonTerminalsFromRules [] = []
-getNonTerminalsFromRules ((left, right):rs) = nub $ left : filter isUpper right ++ getNonTerminalsFromRules rs
+getNonTerminalsFromRules ((left, right):rs) = nub $ left ++ filter isUpper right ++ getNonTerminalsFromRules rs
 
-{-convertToRegularRules ((left, right):rules) = 
-    if length $ filter isLower right > 1
-        then if length $ filter isUpper right > 0
-            then convertRuleWithNonTerm (left, right) : convertToRegularRules rules
-            else convertRuleWithoutNonTerm (left, right) : convertToRegularRules rules
-        else ([],[], (left,right)) : convertToRegularRules rules
 
-    
-convertRuleWithNonTerm :: (Char, [Char]) ->      
--}
+{-Main ##########################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
 
 main :: IO ()
 main = do
@@ -120,19 +155,15 @@ printError _ = do
     putStrLn "Error"
     return ()
 
-{-
-parseGrammarFile :: String -> IO Grammar
-parseGrammarFile fileName = if fileName == "#STDOUT" 
-    then do
-        putStrLn "stdout read" 
-        contents <- getContents
-        return parseGrammar contents
-    else do
-        withFile fileName ReadMode (\handle -> do
-            putStrLn "parsing file"
-            contents <- hGetContents handle
-            return parseGrammar contents)
--}
+
+
+{-Parser ########################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
+
+
 
 test :: String
 test = "A,B\na,b,c\nA\nA->aaB\nA->ccB\nB->bB\nB->#"
@@ -155,19 +186,25 @@ getTerminalsParser terms = if all (\term -> length term == 1 && isLowerList term
                         then map head $ splitOn "," terms
                         else error "wrong format of input - terminals"
 
-getStartNonTerminal :: String -> Char
+getStartNonTerminal :: String -> String
 getStartNonTerminal nonTerms = if length nonTerms == 1 && isUpperList nonTerms
-                                    then head nonTerms
+                                    then [head nonTerms]
                                     else error "wrong format of input - start nonterminal"
 
-getRulesParser :: [String] -> [(Char, String)]
+getRulesParser :: [String] -> [(String, String)]
 getRulesParser [] = []
 getRulesParser (rule:rs) = if  length (head ruleParts) == 1 && isUpperList (head ruleParts) 
                             && isLetterOrHashList (ruleParts!!1)
-                                then (head $ head ruleParts, ruleParts!!1):getRulesParser rs 
+                                then ([head $ head ruleParts], ruleParts!!1):getRulesParser rs 
                                 else error "wrong format of input - rules"
                         where ruleParts = splitOn "->" rule
     
+{-Additional ####################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
+
 isUpperList :: String -> Bool
 isUpperList = all isUpper 
 
