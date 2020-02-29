@@ -12,6 +12,8 @@ import Data.Maybe (isNothing, isJust, fromJust, fromMaybe)
 import Data.List.Split (splitOn)
 import Data.List (intercalate, nub, intersperse)
 import Data.Char (isUpper, isLower, isAlpha, isDigit)
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 {-Structures ####################################################################
 #################################################################################
@@ -26,7 +28,9 @@ data Grammar = Grammar  { nonTerminals :: String
                         }
 
 instance Show Grammar where
-    show (Grammar nt t snt r) = " G = ({" ++ intersperseNonTerms ',' nt ++ "}, {" ++ intersperse ',' t ++ "}, " ++ snt ++ ", {" ++ printRules r ++ "})"  
+    show (Grammar nt t snt r) = " G = ({" ++ intersperseNonTerms ',' nt 
+        ++ "}, {" ++ intersperse ',' t ++ "}, " 
+        ++ snt ++ ", {" ++ printRules r ++ "})"  
         where
             printRules x = init $ init $ parseRules x -- this line removes the comma and space at the end of rules
             parseRules [] = [] 
@@ -37,14 +41,74 @@ instance Show Grammar where
                 else x : c : intersperseNonTerms c xs
 
 data FiniteAutomaton = FA   { states :: [Integer]
+                            , alphabet :: String
+                            , transitions :: [(Integer, Char, Integer)]
                             , startState :: Integer
                             , finishStates :: [Integer]
-                            , transitions :: [(Integer, Char, Integer)]
                             }
-    deriving Show
+
+instance Show FiniteAutomaton where
+    show (FA st alph t sSt fSt) = "FA = ({" ++ init ( tail (show st)) ++ "}, {" 
+        ++ intersperse ',' alph ++ "}, {" ++ printTransitions t ++ "}, " 
+        ++ show sSt ++ ", {" ++ init ( tail (show fSt)) ++ "})"
+        where
+            printTransitions ts = init $ init $ parseTransitions ts -- this line removes comma and space at the end of transitions
+            parseTransitions [] = []
+            parseTransitions ((from, with, to):ts) = show from ++ [with] ++ "->" ++ show to ++ ", " ++ parseTransitions ts 
+
+{-Converting to Finite automaton part############################################
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################-}
+
+--expects regular grammar as an input
+convertToFiniteAutomaton :: Grammar -> FiniteAutomaton
+convertToFiniteAutomaton (Grammar nt t snt r) = FA  { states = getStates mapping $ ntsToListOfNts nt
+                                                    , alphabet = t
+                                                    , transitions = getTransitions mapping r
+                                                    , startState = getState mapping snt
+                                                    , finishStates = getNtsInEpsilonRules mapping r} 
+                                                where mapping = nonTerminalsToStatesMap $ ntsToListOfNts nt
 
 
-{-Converting part################################################################
+getTransitions :: Map String Integer -> [(String, String)] -> [(Integer, Char, Integer)]
+getTransitions _ [] = []
+getTransitions m ((left, right):rs) = if right /= "#"
+    then (getState m left, head right, getState m $ tail right) : getTransitions m rs
+    else getTransitions m rs
+
+ntsToListOfNts :: String -> [String]
+ntsToListOfNts [] = []
+ntsToListOfNts (x:y:xs) = if isDigit y
+        then ([x,y] ++ this) : ntsToListOfNts others  
+        else [x] : ntsToListOfNts (y:xs)
+    where (this, others) = break isAlpha xs 
+ntsToListOfNts (x:_) = [[x]]
+
+getNtsInEpsilonRules :: Map String Integer -> [(String, String)] -> [Integer]
+getNtsInEpsilonRules _ [] = []
+getNtsInEpsilonRules mapping ((left, right):rs) = if right == "#"
+    then (getState mapping left) : getNtsInEpsilonRules mapping rs
+    else getNtsInEpsilonRules mapping rs
+
+getStates :: Map String Integer -> [String] -> [Integer]
+getStates _ [] = []
+getStates mapping (n:ns) = getState mapping n : getStates mapping ns
+
+getState :: Map String Integer -> String -> Integer
+getState mapping nt = fromJust $ Map.lookup nt mapping   
+
+nonTerminalsToStatesMap :: [String] -> Map String Integer
+nonTerminalsToStatesMap ns = Map.fromList $ nonTermsStatesPairs ns 1
+
+nonTermsStatesPairs :: [String] -> Integer -> [(String, Integer)]
+nonTermsStatesPairs [] _ = []
+nonTermsStatesPairs (n:ns) st = (n, st) : nonTermsStatesPairs ns (st+1)
+
+
+
+{-Converting to Regular part#####################################################
 #################################################################################
 #################################################################################
 #################################################################################
