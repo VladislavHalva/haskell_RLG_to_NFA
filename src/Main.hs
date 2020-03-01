@@ -61,23 +61,24 @@ instance Show FiniteAutomaton where
 #################################################################################
 #################################################################################
 #################################################################################-}
-{-
+
 --expects regular grammar as an input
 convertToFiniteAutomaton :: Grammar -> FiniteAutomaton
-convertToFiniteAutomaton (Grammar nt t snt r) = FA  { states = getStates mapping $ ntsToListOfNts nt
-                                                    , alphabet = t
+convertToFiniteAutomaton (Grammar nt t snt r) = FA  { states = getStates mapping nt
+                                                    , alphabet = concat t
                                                     , transitions = getTransitions mapping r
                                                     , startState = getState mapping snt
                                                     , finishStates = getNtsInEpsilonRules mapping r} 
-                                                where mapping = nonTerminalsToStatesMap $ ntsToListOfNts nt
+                                                where mapping = nonTerminalsToStatesMap nt
 
 
-getTransitions :: Map String Integer -> [(String, String)] -> [(Integer, Char, Integer)]
+getTransitions :: Map String Integer -> [(String, [String])] -> [(Integer, Char, Integer)]
 getTransitions _ [] = []
-getTransitions m ((left, right):rs) = if right /= "#"
-    then (getState m left, head right, getState m $ tail right) : getTransitions m rs
+getTransitions m ((left, right):rs) = if head right /= "#"
+    then (getState m left, head $ head right, getState m $ head $ tail right) : getTransitions m rs
     else getTransitions m rs
 
+{-
 ntsToListOfNts :: String -> [String]
 ntsToListOfNts [] = []
 ntsToListOfNts (x:y:xs) = if isDigit y
@@ -85,10 +86,11 @@ ntsToListOfNts (x:y:xs) = if isDigit y
         else [x] : ntsToListOfNts (y:xs)
     where (this, others) = break isAlpha xs 
 ntsToListOfNts (x:_) = [[x]]
+-}
 
-getNtsInEpsilonRules :: Map String Integer -> [(String, String)] -> [Integer]
+getNtsInEpsilonRules :: Map String Integer -> [(String, [String])] -> [Integer]
 getNtsInEpsilonRules _ [] = []
-getNtsInEpsilonRules mapping ((left, right):rs) = if right == "#"
+getNtsInEpsilonRules mapping ((left, right):rs) = if head right == "#"
     then (getState mapping left) : getNtsInEpsilonRules mapping rs
     else getNtsInEpsilonRules mapping rs
 
@@ -106,7 +108,6 @@ nonTermsStatesPairs :: [String] -> Integer -> [(String, Integer)]
 nonTermsStatesPairs [] _ = []
 nonTermsStatesPairs (n:ns) st = (n, st) : nonTermsStatesPairs ns (st+1)
 
--}
 
 {-Converting to Regular part#####################################################
 #################################################################################
