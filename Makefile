@@ -3,7 +3,7 @@
 # Login: xhalva04
 
 all:
-	ghc src/Main.hs -o plg-2-nka
+	ghc -isrc -o plg-2-nka src/MainG2FA.hs 
 
 clean: 
 	rm plg-2-nka *.o *.hi
