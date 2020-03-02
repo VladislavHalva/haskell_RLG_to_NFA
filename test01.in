@@ -1,0 +1,9 @@
+A,B,C,D
+a,b,c,d
+A
+A->acdaaB
+A->ccdaD
+B->bbbbB
+D->adA
+B->#
+D->#

@@ -58,12 +58,17 @@ getRulesAndMaxIndex rs = (rs, maxIndex $ rs)
 
 -- returns maximum index value of a nonterminal in given list of rules
 maxIndex :: [(String, [String])] -> Integer
-maxIndex rs = maximum $ getIndexesOfNonTerms $ getRightPartsOfRules rs
+maxIndex rs = maximum $ getIndexesOfNonTerms (getRightPartsOfRules rs ++ getLeftPartsOfRules rs)
 
 -- returns list of right sides of given list of rules
 getRightPartsOfRules ::  [(String, [String])] -> [String]
 getRightPartsOfRules [] = []
 getRightPartsOfRules ((_, right):rs) = right ++ getRightPartsOfRules rs
+
+-- returns list of left sides of given list of rules
+getLeftPartsOfRules :: [(String, [String])] -> [String]
+getLeftPartsOfRules [] = []
+getLeftPartsOfRules ((left,_):rs) = [left] ++ getRightPartsOfRules rs
 
 -- returns list of indexes of all nonterms in given strings
 getIndexesOfNonTerms :: [String] -> [Integer]
