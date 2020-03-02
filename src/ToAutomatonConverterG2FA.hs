@@ -1,3 +1,9 @@
+{- FIT VUT Brno, FLP 2019/2020 
+ - Assignment: PLG-2-NKA
+ - Author: Vladislav Halva
+ - Login: xhalva04
+ -}
+
 module ToAutomatonConverterG2FA (convertToFiniteAutomaton) where 
 
 import StructuresG2FA
@@ -46,7 +52,7 @@ getState mapping nt = fromJust $ Map.lookup nt mapping
 -- creates mapping of nonterminals to states
 -- ie. assigns an integer to each nonterminal
 nonTerminalsToStatesMap :: [String] -> Map String Integer
-nonTerminalsToStatesMap ns = Map.fromList $ nonTermsStatesPairs ns 1
+nonTerminalsToStatesMap ns = Map.fromList $ nonTermsStatesPairs ns 0
 
 -- returns nonterminal - unique interger pairs
 -- assigning starts from the given number

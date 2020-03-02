@@ -1,4 +1,5 @@
-# Makefile for FLP project 2019/2020
+# FIT VUT Brno, FLP 2019/2020 
+# Assignment: PLG-2-NKA
 # Author: Vladislav Halva
 # Login: xhalva04
 

@@ -1,5 +1,5 @@
 {- FIT VUT Brno, FLP 2019/2020 
- - Assginment: PLG-2-NKA
+ - Assignment: PLG-2-NKA
  - Author: Vladislav Halva
  - Login: xhalva04
  -}

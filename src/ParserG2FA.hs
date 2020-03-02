@@ -1,3 +1,8 @@
+{- FIT VUT Brno, FLP 2019/2020 
+ - Assignment: PLG-2-NKA
+ - Author: Vladislav Halva
+ - Login: xhalva04
+ -}
 module ParserG2FA (parseGrammar) where
 
 import StructuresG2FA
