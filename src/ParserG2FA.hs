@@ -6,7 +6,7 @@
 module ParserG2FA (parseGrammar) where
 
 import StructuresG2FA
-import AdditionalG2FA
+import AdditionalG2FA (isUpperList, isLowerList)
 
 import Data.List.Split (splitOn)
 import Data.Maybe (isNothing, fromJust)
@@ -17,7 +17,7 @@ import Data.Char (isUpper, isLower)
 parseGrammar :: String -> Grammar
 parseGrammar contents = 
     if isNothing g 
-        then errorWithoutStackTrace "incorrect grammar as input, used terminals and nonterminals not defined"    
+        then error "incorrect grammar as input, used terminals and nonterminals not defined"    
         else fromJust g              
     where 
         g = checkGrammarSymbols Grammar {nonTerminals = getNonTerminalsParser $ head rows
@@ -31,14 +31,14 @@ getNonTerminalsParser :: String -> [String]
 getNonTerminalsParser nonTerms = 
     if all (\nonTerm -> length nonTerm == 1 && isUpperList nonTerm) $ splitOn "," nonTerms
         then splitOn "," nonTerms
-        else errorWithoutStackTrace "wrong format of input - nonterminals"
+        else error "wrong format of input - nonterminals"
 
 -- returns list of terminals parsed from string representation
 getTerminalsParser :: String -> [String]
 getTerminalsParser terms = 
     if all (\term -> length term == 1 && isLowerList term) $ splitOn "," terms
         then splitOn "," terms
-        else errorWithoutStackTrace "wrong format of input - terminals"
+        else error "wrong format of input - terminals"
 
 -- returns nonterminal parsed from string representation
 -- checks if there is only one specified 
@@ -46,7 +46,7 @@ getStartNonTerminalParser :: String -> String
 getStartNonTerminalParser nonTerm = 
     if length nonTerm == 1 && isUpperList nonTerm
         then nonTerm
-        else errorWithoutStackTrace "wrong format of input - start nonterminal"
+        else error "wrong format of input - start nonterminal"
 
 -- returns list of rules parsed from string representation
 getRulesParser :: [String] -> [(String, [String])]
@@ -54,7 +54,7 @@ getRulesParser [] = []
 getRulesParser (rule:rs) = 
     if  length(head ruleParts) == 1 && isUpperList (head ruleParts) && isValidRule(ruleParts!!1)
         then ([head $ head ruleParts], splitRightParser $ ruleParts!!1 ) : getRulesParser rs 
-        else errorWithoutStackTrace "wrong format of input - rules"
+        else error "wrong format of input - rules"
     where ruleParts = splitOn "->" rule
     
 -- splits right side of a rule to a list of terminals and nonterminals 

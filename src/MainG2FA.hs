@@ -16,7 +16,7 @@ import System.IO (getContents)
 import Data.Maybe (isNothing, fromJust)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import System.Exit (die)
+import System.Exit (exitFailure)
 
 -- programs input point 
 -- reads arguments from command line and runs specified action on given input
@@ -33,9 +33,9 @@ main = do
 -- writes hint how to run program, 
 -- specified error message and terminates program
 printError :: String -> IO ()
-printError str = do  
+printError _ = do  
     printHint 
-    die str
+    exitFailure
 
 -- processes arguments from commandline, returns operation to be executed
 procArgs :: (Monad m) => String -> [String] -> m (String -> IO ())
